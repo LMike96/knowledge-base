@@ -1867,7 +1867,7 @@ async function checkAccessPassword() {
       if (saved) {
         grantAccess();
       } else {
-        errorEl.textContent = '⚠️ Не удалось сохранить пароль. Нужен Service Key.';
+        errorEl.textContent = '⚠️ Не удалось записать пароль в Supabase';
         input.disabled = false;
       }
       return;
@@ -1893,15 +1893,20 @@ async function checkAccessPassword() {
 
 async function setInitialPassword(pwd) {
   const serviceKey = getSBServiceKey();
-  if (!serviceKey) return false;
+  // RLS is disabled on settings table, so anon key can write too
   try {
     const res = await fetch(`${SB_URL}/rest/v1/settings`, {
       method: 'POST',
-      headers: { ...sbHeaders(true), 'Prefer': 'resolution=merge-duplicates' },
+      headers: { ...sbHeaders(!!serviceKey), 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({ key: 'access_password', value: pwd })
     });
-    return res.ok;
+    if (!res.ok) {
+      console.error('setInitialPassword failed:', res.status, await res.text());
+      return false;
+    }
+    return true;
   } catch(e) {
+    console.error('setInitialPassword error:', e);
     return false;
   }
 }
