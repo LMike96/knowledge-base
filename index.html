@@ -1785,7 +1785,7 @@ let _isSaving  = false;
 // ANON KEY — безопасно вшит в код, даёт только чтение (RLS защищает запись)
 // SERVICE KEY — хранится только в телефоне админа, никогда не попадает в код
 const SB_URL      = 'https://pyevopfdpzdytutksqzy.supabase.co';
-const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5ZXZvcGZkcHpkeXR1dGtzcXp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Mzk5NzQsImV4cCI6MjA4ODQxNTk3NH0.0qI3d-ccqDe3LdeNVRlSGY6YMnaMh1qY4E9oDR4HJhc';
+const SB_ANON_KEY = 'sb_publishable_8zv3Lmcekrue9ww6GbWBNg_s13JkNYy';
 
 function getSBServiceKey() { return localStorage.getItem('sb_service_key') || ''; }
 
@@ -1862,14 +1862,10 @@ async function checkAccessPassword() {
     const rows = await res.json();
 
     if (!rows.length) {
-      // No password set yet — first launch, set this password
-      const saved = await setInitialPassword(pwd);
-      if (saved) {
-        grantAccess();
-      } else {
-        errorEl.textContent = '⚠️ Не удалось записать пароль в Supabase';
-        input.disabled = false;
-      }
+      // Row missing OR RLS blocking reads (RLS returns empty 200)
+      errorEl.textContent = '⚠️ Нет доступа к таблице settings (проверь RLS)';
+      input.disabled = false;
+      console.error('settings query returned empty. Check RLS policies on settings table.');
       return;
     }
 
